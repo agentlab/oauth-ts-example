@@ -1,6 +1,6 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import logo from "./logo.svg";
+import "./App.css";
 
 import { RouteComponentProps } from "react-router-dom";
 
@@ -34,18 +34,17 @@ function App() {
   );
 }
 
-function BasicExample() {
+export function BasicExample() {
 
-let query = useQuery();
-  
-console.log(query);
-  
-let name : string = "123";
+  /*let query = useQuery();
 
-console.log(name);
+  console.log("query=", query);*/
+
+  let name: string = "123";
+
+  console.log(name);
 
   return (
-    <Router>
       <div>
         <ul>
           <li>
@@ -55,7 +54,7 @@ console.log(name);
             <Link to="/about">About</Link>
           </li>
           <li>
-            <Link to="/oauth20/callback">callback</Link>
+            <Link to="/oauth20/callback?state=wfe&code=fwef">callback</Link>
           </li>
         </ul>
 
@@ -69,15 +68,14 @@ console.log(name);
           of them to render at a time
         */}
         <Switch>
-          <Route exact path="/" component = {Home} />
-          <Route path="/about"  component = {About} />
-          <Route path="/oauth20/callback" component = {Callback}>
+          <Route exact path="/" component={Home} />
+          <Route path="/about" component={About} />
+          <Route path="/oauth20/callback" component={Callback}>
             {/* let name = {useQuery().get("name")}; */}
             {/* <Callback name =  {name}  /> */}
           </Route>
         </Switch>
       </div>
-    </Router>
   );
 }
 
@@ -101,19 +99,30 @@ function About() {
 }
 
 function Callback() {
-
   // const queryString = require('query-string');
 
-  
   // const params = new URLSearchParams(props.location.search);
   // const foo = params.get('foo'); // bar
 
   // console.log(this.props.params); // should print "param1=value1&param2=value2...."
 
+  console.log("Callback");
+  let location = useLocation();
+  console.log("location=", location);
+  console.log("search=", location.search);
+
+  let params = useParams();
+  console.log("params=", params);
+
+  let sp = new URLSearchParams(location.search.substr(1));
+  console.log("sp=", sp);
+  let state = sp.get('state') || '';
+  let code = sp.get('code') || '';
+  console.log("state=", state);
 
   return (
     <div>
-      <h2>callback + " " + </h2>
+      <h2>callback state={state} code={code}</h2>
     </div>
   );
 }
@@ -123,6 +132,3 @@ function Callback() {
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
-
-
-export default BasicExample;
