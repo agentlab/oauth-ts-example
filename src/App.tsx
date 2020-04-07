@@ -1,30 +1,21 @@
 import React, { MouseEvent } from "react";
 import "./App.css";
-import * as request from "request-promise-native";
 import { Guid } from "guid-typescript";
+
+import { RestClient } from "./RestClient";
 
 import {
   Switch,
   Route,
   Link,
-  useParams,
+  // useParams,
   useLocation
 } from "react-router-dom";
+import { AxiosRequestConfig, AxiosResponse } from "axios";
 
-function handleClick(event: MouseEvent) {
+// let httpc: httpm.HttpClient = new httpm.HttpClient('vsts-node-api');
 
-  let baseUrl: string = "https://example.com:9443/oauth2/authorize";
-  let state: string = Guid.create().toString();
-  let client_id: string = "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa";
-  let redirectUri: string = "http://localhost:3000/oauth20/callback";
-
-  let authUrl: string = baseUrl + "?response_type=code"
-    + "&client_id=" + client_id
-    + "&state=" + state
-    + "&scope=openid"
-    + "&redirect_uri=" + redirectUri;
-  window.open(authUrl, "_self")
-}
+let restClient: RestClient = new RestClient();
 
 export function BasicExample() {
 
@@ -32,54 +23,22 @@ export function BasicExample() {
     <div>
       <ul>
         <li>
-          <Link to="/">Home</Link>
-        </li>
-        <li>
           <Link to="/about">About</Link>
-        </li>
-        <li>
-          <Link to="/oauth20/callback">callback</Link>
         </li>
       </ul>
 
       <hr />
 
-      <button
-        onClick={handleClick}
-        // onFocus={onFocus}
-        onKeyDown={e => {
-          // When using an inline function, the appropriate argument signature
-          // is provided for us
-        }}
-      >
-        Click me!
-    </button>
+      <button onClick={handleAuthClick} > Authorize </button>
+      <button onClick={getProtectedResourse} > GetProtectedResourse  </button>
+      <button onClick={refreshToken} > RefreshToken  </button>
+      <button onClick={logout} > Logout  </button>
 
-      {/*
-          A <Switch> looks through all its children <Route>
-          elements and renders the first one whose path
-          matches the current URL. Use a <Switch> any time
-          you have multiple routes, but you want only one
-          of them to render at a time
-        */}
       <Switch>
-        <Route exact path="/" component={Home} />
         <Route path="/about" component={About} />
         <Route path="/oauth20/callback" component={Callback}>
         </Route>
       </Switch>
-    </div>
-  );
-}
-
-
-// You can think of these components as "pages"
-// in your app.
-
-function Home() {
-  return (
-    <div>
-      <h2>Home</h2>
     </div>
   );
 }
@@ -95,22 +54,97 @@ function About() {
 function Callback() {
 
   console.log("Callback");
-  let location = useLocation();
-  console.log("location=", location);
-  console.log("search=", location.search);
 
-  let params = useParams();
-  console.log("params=", params);
-
-  let sp = new URLSearchParams(location.search);
+  let sp = new URLSearchParams(useLocation().search);
   console.log("sp=", sp);
   let state: string = sp.get('state') || '';
-  let code = sp.get('code') || '';
   console.log("state=", state);
+  let code = sp.get('code') || '';
+  console.log("code=", code);
+
+  exchangeCode(code);
 
   return (
     <div>
       <h2>callback state={state} code={code}</h2>
     </div>
+
   );
+}
+
+function handleAuthClick(event: MouseEvent) {
+
+  let baseUrl: string = "https://example.com:9443/oauth2/authorize";
+  let state: string = Guid.create().toString();
+  let client_id: string = "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa";
+  let redirectUri: string = "http://example.com:3000/oauth20/callback";
+
+  let authUrl: string = baseUrl + "?response_type=code"
+    + "&client_id=" + client_id
+    + "&state=" + state
+    + "&scope=openid"
+    + "&redirect_uri=" + redirectUri;
+  window.open(authUrl, "_self")
+}
+
+async function exchangeCode(code: string) {
+  let data: string = 'grant_type=authorization_code'
+    + '&code=' + code
+    + '&redirect_uri=http://example.com:3000/oauth20/callback';
+
+  let requestConfig: AxiosRequestConfig = {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    withCredentials: true
+  }
+
+  console.log("document.cookie");
+  console.log(document.cookie + " !");
+  console.log("document.cookie");
+
+  try {
+    let response: AxiosResponse = await restClient.post("http://example.com:8181/oauth2/token", encodeURI(data), requestConfig);
+    if (response.status === 200) {
+      alert("Successful auth");
+    } else {
+      alert(JSON.stringify(response.data))
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function getProtectedResourse(event: MouseEvent) {
+  try {
+    let response: AxiosResponse = await restClient.get("http://example.com:8181/booking");
+    alert(JSON.stringify(response.data))
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function refreshToken()  {
+  let data: string = 'grant_type=refresh_token';
+
+  let requestConfig: AxiosRequestConfig = {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+
+  try {
+    let response: AxiosResponse = await restClient.post("http://example.com:8181/oauth2/token", encodeURI(data), requestConfig);
+    if (response.status === 200) {
+      alert("Successful refresh");
+    } else {
+      alert(JSON.stringify(response.data))
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function logout()  {
+
 }
